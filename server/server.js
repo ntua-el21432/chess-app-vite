@@ -5,7 +5,17 @@ import { Chess } from "chess.js";
 import path from "path";
 import {fileURLToPath} from "url";
 
-const __dirname = fileURLToPath(import.meta.url);
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const clientPath = path.join(__dirname, "../client/dist"); // Move up from 'server'
+
+app.use(express.static(clientPath));
+app.get("*", (req, res) => {
+    res.sendFile(path.join(clientPath, "index.html"));
+});
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
