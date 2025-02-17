@@ -11,7 +11,7 @@ const port=process.env.PORT || 5000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const staticPath=path.resolve(__dirname,"dist");
+const clientPath=path.resolve(__dirname,"client","dist");
 
 //setup middleware
 app.use(express.static(clientPath));
@@ -84,8 +84,6 @@ io.on("connection", (socket) => {
         console.log("client disconnected:", socket.id);
     });
 });
-
-
 
 app.get("*", (req, res) => {
     res.sendFile(path.join(clientPath, "index.html"));
