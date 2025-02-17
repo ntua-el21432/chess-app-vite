@@ -11,12 +11,12 @@ const __dirname = path.dirname(__filename);
 
 const clientPath = path.join(__dirname, "../client/dist"); // Move up from 'server'
 
+const app = express();
 app.use(express.static(clientPath));
 app.get("*", (req, res) => {
     res.sendFile(path.join(clientPath, "index.html"));
 });
 
-const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
@@ -69,10 +69,6 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log("A user disconnected:", socket.id);
     });
-});
-app.use(express.static(path.join(__dirname, "./client","dist","index.html")));
-app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "./client", "dist", "index.html"));
 });
 const PORT = 5000;
 server.listen(PORT, () => {
