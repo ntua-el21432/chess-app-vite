@@ -10,7 +10,7 @@ const port=process.env.PORT || 5000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const clientPath = path.join(__dirname, "../client/dist"); // Move up from 'server'
+
 const staticPath=path.resolve(__dirname,"dist");
 
 //setup middleware
@@ -72,7 +72,7 @@ io.on("connection", (socket) => {
             const moveResult = game.chess.move(move);
             if (moveResult) {
                 game.currentTurn = game.currentTurn === "white" ? "black" : "white";
-                io.to(gameId).emit("moveMade", game.fen, game.currentTurn());
+                io.to(gameId).emit("moveMade", game.fen(), game.currentTurn());
             } else {
                 socket.emit("error", "Invalid move.");
             }
@@ -84,6 +84,8 @@ io.on("connection", (socket) => {
         console.log("client disconnected:", socket.id);
     });
 });
+
+
 
 app.get("*", (req, res) => {
     res.sendFile(path.join(clientPath, "index.html"));

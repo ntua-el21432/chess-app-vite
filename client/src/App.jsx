@@ -30,7 +30,7 @@ const ChessGame = () => {
     };
 
     const onDrop = (sourceSquare, targetSquare) => {
-        const newGame = new Chess(game.fen);
+        const newGame = new Chess(game.fen());
         const move = newGame.move({ from: sourceSquare, to: targetSquare, promotion: "q" });
 
         if (move) {
@@ -114,7 +114,7 @@ const ChessGame = () => {
                 {/* Chessboard */}
                 <div style={{ width: "100%", height: "80%" }}>
                     <Chessboard
-                        position={game.fen}
+                        position={game.fen()}
                         onPieceDrop={onDrop}
                         arePremovesAllowed={false}
                         boardOrientation={playerColor} // Fixed orientation based on turn
