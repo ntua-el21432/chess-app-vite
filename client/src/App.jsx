@@ -4,12 +4,15 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { io } from "socket.io-client";
 
-const socket = io("https://chess-app-vite-2.onrender.com"); // Connect to the backend server
+const socket = io("http://localhost:5000"); // Connect to the backend server
 
 const ChessGame = () => {
     const [game, setGame] = useState(new Chess());
     const [gameId, setGameId] = useState(""); // Store the game ID
+    const [playerId, setPlayerId] = useState(""); // Store this user's socket ID
+    const [opponentId, setOpponentId] = useState(""); // Store opponent's ID
     const [currentTurn, setCurrentTurn] = useState("white"); // Track whose turn it is
+    const [playerColor, setPlayerColor] = useState("white"); // Store the player's color
 
     // Handle game creation
     const createGame = () => {
@@ -44,17 +47,30 @@ const ChessGame = () => {
 
     // Listen for server events
     useEffect(() => {
-        socket.on("connect", () => console.log("Socket connected:", socket.id));
+        socket.on("connect", () => {
+            console.log("Socket connected:", socket.id);
+            setPlayerId(socket.id);
+        });
 
         socket.on("gameCreated", (id) => {
             console.log("Game Created:", id);
             setGameId(id);
+            setPlayerColor("white"); // Game creator is always white
         });
 
-        socket.on("gameStarted", (gameState) => {
-            console.log("Game Started:", gameState);
-            setGame(new Chess(gameState.board));
-            setCurrentTurn(gameState.currentTurn);
+        socket.on("gameStarted", ({ board, whitePlayer, blackPlayer }) => {
+            console.log("Game Started:", { board, whitePlayer, blackPlayer });
+            setGame(new Chess(board));
+            setCurrentTurn("white");
+
+            // Determine player's color based on their socket ID
+            if (socket.id === whitePlayer) {
+                setPlayerColor("white");
+                setOpponentId(blackPlayer);
+            } else {
+                setPlayerColor("black");
+                setOpponentId(whitePlayer);
+            }
         });
 
         socket.on("moveMade", (board, turn) => {
@@ -75,33 +91,46 @@ const ChessGame = () => {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
             <h1 className="text-2xl font-bold mb-4">Chess Game</h1>
-            
-            {/* Center the chessboard */}
-            <div className="flex justify-center items-center mb-4">
-                <div style={{ width: "600px", height: "600px" }}>
+
+            {/* Display Game Info */}
+            {gameId && (
+                <div className="mb-4 text-center p-2 bg-white shadow-md rounded">
+                    <p><strong>Game ID:</strong> {gameId}</p>
+                    <p><strong>Your ID:</strong> {playerId}</p>
+                    <p><strong>Opponent ID:</strong> {opponentId || "Waiting for opponent..."}</p>
+                    <p><strong>Your Color:</strong> {playerColor}</p>
+                    <p><strong>Turn:</strong> {currentTurn}</p>
+                </div>
+            )}
+
+            {/* Chessboard */}
+            <div className="flex justify-center items-center w-full">
+                <div className="w-[600px] h-[600px]">
                     <Chessboard
                         position={game.fen()}
                         onPieceDrop={onDrop}
                         arePremovesAllowed={false}
-                        boardOrientation={currentTurn === "white" ? "white" : "black"} // Rotate board based on turn
+                        boardOrientation={playerColor} // Fixed board orientation for each player
                     />
                 </div>
             </div>
 
-            {/* Game controls */}
-            <div className="mt-4 text-center">
-                <button onClick={createGame} className="bg-blue-500 text-white px-4 py-2 rounded mr-2">
-                    Create Game
-                </button>
-                <input
-                    type="text"
-                    placeholder="Enter Game ID"
-                    className="border px-4 py-2 rounded"
-                    onChange={(e) => setGameId(e.target.value)}
-                />
-                <button onClick={joinGame} className="bg-green-500 text-white px-4 py-2 rounded ml-2">
-                    Join Game
-                </button>
+            {/* Game Controls */}
+            <div className="mt-4 flex flex-col items-center">
+                <div className="flex gap-2">
+                    <button onClick={createGame} className="bg-blue-500 text-white px-4 py-2 rounded">
+                        Create Game
+                    </button>
+                    <input
+                        type="text"
+                        placeholder="Enter Game ID"
+                        className="border px-4 py-2 rounded"
+                        onChange={(e) => setGameId(e.target.value)}
+                    />
+                    <button onClick={joinGame} className="bg-green-500 text-white px-4 py-2 rounded">
+                        Join Game
+                    </button>
+                </div>
             </div>
         </div>
     );
