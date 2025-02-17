@@ -8,19 +8,15 @@ import {fileURLToPath} from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const clientPath = path.join(__dirname, "../client/dist"); // Move up from 'server'
 
 const app = express();
 app.use(express.static(clientPath));
-app.get("*", (req, res) => {
-    res.sendFile(path.join(clientPath, "index.html"));
-});
 
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://chess-app-vite-1.onrender.com" ,// Allow frontend to connect
+        origin: "https://localhost:3000" ,// Allow frontend to connect
         methods: ["GET", "POST"]
     }
 });
@@ -28,6 +24,7 @@ const io = new Server(server, {
 const games = {}; // Store game states
 
 io.on("connection", (socket) => {
+    console.log(socket.id);
     console.log("A user connected:", socket.id);
 
     // Handle game creation
@@ -67,10 +64,13 @@ io.on("connection", (socket) => {
 
     // Handle disconnection
     socket.on("disconnect", () => {
-        console.log("A user disconnected:", socket.id);
+        console.log("client disconnected:", socket.id);
     });
 });
 const PORT = 5000;
+app.get("*", (req, res) => {
+    res.sendFile(path.join(clientPath, "index.html"));
+});
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
