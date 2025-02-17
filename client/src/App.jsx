@@ -9,6 +9,7 @@ const socket = io("https://chess-app-vite-2.onrender.com");
 const ChessGame = () => {
     const [game, setGame] = useState(new Chess());
     const [gameId, setGameId] = useState(""); 
+    const[playerColor,setPlayerColor]=useState(null);
     const [currentTurn, setCurrentTurn] = useState("white");
     const [playerId, setPlayerId] = useState("");
     const [opponentId, setOpponentId] = useState("");
@@ -56,6 +57,7 @@ const ChessGame = () => {
 
         socket.on("gameStarted", (gameState) => {
             setGame(new Chess(gameState.board));
+            setPlayerColor(gameState.playerColor);
             setCurrentTurn(gameState.currentTurn);
             setOpponentId(gameState.opponentId || "Waiting for opponent...");
             setStatusMessage("Game started!");
@@ -95,6 +97,7 @@ const ChessGame = () => {
                 {gameId && (
                     <div className="mb-4 text-center p-4 bg-white shadow-md rounded w-full max-w-md">
                         <p><strong>Game ID:</strong> {gameId}</p>
+                        <p><strong>Your Color:</strong> {playerColor || "Waiting for game to start..."}</p>
                         <p><strong>Your ID:</strong> {playerId}</p>
                         <p><strong>Opponent ID:</strong> {opponentId || "Waiting for opponent..."}</p>
                         <p><strong>Current Turn:</strong> {currentTurn}</p>
@@ -114,7 +117,7 @@ const ChessGame = () => {
                         position={game.fen()}
                         onPieceDrop={onDrop}
                         arePremovesAllowed={false}
-                        boardOrientation={currentTurn} // Fixed orientation based on turn
+                        boardOrientation={playerColor} // Fixed orientation based on turn
                         customBoardStyle={{ width: "100%", height: "100%" }}
                     />
                 </div>

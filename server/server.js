@@ -4,19 +4,22 @@ import { Server } from "socket.io";
 import { Chess } from "chess.js";
 import path from "path";
 import {fileURLToPath} from "url";
+const app = express();
 
+const port=process.env.PORT || 5000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const clientPath = path.join(__dirname, "../client/dist"); // Move up from 'server'
+const staticPath=path.resolve(__dirname,"dist");
 
-const app = express();
+//setup middleware
 app.use(express.static(clientPath));
 
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://localhost:3000" ,// Allow frontend to connect
+        origin: "https://chess-app-vite-2.onrender.com" ,// Allow frontend to connect
         methods: ["GET", "POST"]
     }
 });
@@ -30,7 +33,14 @@ io.on("connection", (socket) => {
     // Handle game creation
     socket.on("createGame", () => {
         const gameId = Math.random().toString(36).slice(2, 11); // Generate a random game ID using slice() instead of substr()
-        games[gameId] = new Chess(); // Initialize a new Chess game for this ID
+        games[gameId] = {
+            chess:new Chess(),
+            players: {
+                white: socket.id,
+                black: null,
+            },
+            currentTurn: "white"
+        };
         socket.join(gameId); // Add socket to a room (gameId)
         console.log(`Game created with ID: ${gameId}`);
         socket.emit("gameCreated", gameId); // Emit the game ID back to the client
@@ -38,24 +48,31 @@ io.on("connection", (socket) => {
 
     // Handle joining a game
     socket.on("joinGame", (gameId) => {
-        if (games[gameId]) {
+        const game=games[gameId];
+        if (game && !game.players.black) {
+            game.players.black = socket.id;
             socket.join(gameId);
             socket.emit("gameStarted", {
-                board: games[gameId].fen(),
-                currentTurn: "white",
+                board: game.chess.fen(),
+                playerColor: "black",
+                currentTurn: game.currentTurn
             });
-        } else {
+        } else if(!game){
             socket.emit("error", "Invalid game ID.");
+        }
+        else{
+            socket.emit("error", "Game already has two players.");
         }
     });
 
     // Handle moves
     socket.on("makeMove", (gameId, move) => {
-        if (games[gameId]) {
-            const game = games[gameId];
-            const moveResult = game.move(move);
+        const game = games[gameId];
+        if (game && game.players[game.currentTurn] === socket.id) {
+            const moveResult = game.chess.move(move);
             if (moveResult) {
-                io.to(gameId).emit("moveMade", game.fen(), game.turn() === "w" ? "white" : "black");
+                game.currentTurn = game.currentTurn === "white" ? "black" : "white";
+                io.to(gameId).emit("moveMade", game.fen(), game.currentTurn());
             } else {
                 socket.emit("error", "Invalid move.");
             }
@@ -67,10 +84,10 @@ io.on("connection", (socket) => {
         console.log("client disconnected:", socket.id);
     });
 });
-const PORT = 5000;
+
 app.get("*", (req, res) => {
     res.sendFile(path.join(clientPath, "index.html"));
 });
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+server.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
