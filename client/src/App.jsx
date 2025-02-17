@@ -94,7 +94,7 @@ const ChessGame = () => {
 
             {/* Display Game Info */}
             {gameId && (
-                <div className="mb-4 text-center p-2 bg-white shadow-md rounded">
+                <div className="mb-4 text-center p-4 bg-white shadow-md rounded w-full max-w-md">
                     <p><strong>Game ID:</strong> {gameId}</p>
                     <p><strong>Your ID:</strong> {playerId}</p>
                     <p><strong>Opponent ID:</strong> {opponentId || "Waiting for opponent..."}</p>
@@ -103,28 +103,29 @@ const ChessGame = () => {
                 </div>
             )}
 
-            {/* Chessboard */}
+            {/* Chessboard - Responsive & centered */}
             <div className="flex justify-center items-center w-full">
-                <div className="w-[600px] h-[600px]">
+                <div className="w-full max-w-xl">
                     <Chessboard
                         position={game.fen()}
                         onPieceDrop={onDrop}
                         arePremovesAllowed={false}
                         boardOrientation={playerColor} // Fixed board orientation for each player
+                        customBoardStyle={{ maxWidth: "100%", height: "auto" }}
                     />
                 </div>
             </div>
 
             {/* Game Controls */}
-            <div className="mt-4 flex flex-col items-center">
-                <div className="flex gap-2">
+            <div className="mt-6 flex flex-col items-center w-full max-w-md">
+                <div className="flex flex-wrap gap-2 justify-center">
                     <button onClick={createGame} className="bg-blue-500 text-white px-4 py-2 rounded">
                         Create Game
                     </button>
                     <input
                         type="text"
                         placeholder="Enter Game ID"
-                        className="border px-4 py-2 rounded"
+                        className="border px-4 py-2 rounded w-40"
                         onChange={(e) => setGameId(e.target.value)}
                     />
                     <button onClick={joinGame} className="bg-green-500 text-white px-4 py-2 rounded">
