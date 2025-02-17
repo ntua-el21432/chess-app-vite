@@ -53,7 +53,7 @@ io.on("connection", (socket) => {
             game.players.black = socket.id;
             socket.join(gameId);
             socket.emit("gameStarted", {
-                board: game.chess.fen(),
+                board: game.chess.fen,
                 playerColor: "black",
                 currentTurn: game.currentTurn
             });
@@ -72,7 +72,7 @@ io.on("connection", (socket) => {
             const moveResult = game.chess.move(move);
             if (moveResult) {
                 game.currentTurn = game.currentTurn === "white" ? "black" : "white";
-                io.to(gameId).emit("moveMade", game.fen(), game.currentTurn());
+                io.to(gameId).emit("moveMade", game.fen, game.currentTurn());
             } else {
                 socket.emit("error", "Invalid move.");
             }
