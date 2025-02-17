@@ -4,7 +4,7 @@ import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000"); // Connect to the backend server
+const socket = io("https://chess-app-vite-2.onrender.com"); // Connect to the backend server
 
 const ChessGame = () => {
     const [game, setGame] = useState(new Chess());
