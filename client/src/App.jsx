@@ -89,52 +89,55 @@ const ChessGame = () => {
     }, []);
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
-            <h1 className="text-2xl font-bold mb-4">Chess Game</h1>
-
-            {/* Display Game Info */}
-            {gameId && (
-                <div className="mb-4 text-center p-4 bg-white shadow-md rounded w-full max-w-md">
-                    <p><strong>Game ID:</strong> {gameId}</p>
-                    <p><strong>Your ID:</strong> {playerId}</p>
-                    <p><strong>Opponent ID:</strong> {opponentId || "Waiting for opponent..."}</p>
-                    <p><strong>Your Color:</strong> {playerColor}</p>
-                    <p><strong>Turn:</strong> {currentTurn}</p>
-                </div>
-            )}
-
-            {/* Chessboard - Responsive & centered */}
-            <div className="flex justify-center items-center w-full">
-                <div className="w-full max-w-xl">
-                    <Chessboard
-                        position={game.fen()}
-                        onPieceDrop={onDrop}
-                        arePremovesAllowed={false}
-                        boardOrientation={playerColor} // Fixed board orientation for each player
-                        customBoardStyle={{ maxWidth: "100%", height: "auto" }}
-                    />
-                </div>
-            </div>
-
-            {/* Game Controls */}
-            <div className="mt-6 flex flex-col items-center w-full max-w-md">
-                <div className="flex flex-wrap gap-2 justify-center">
-                    <button onClick={createGame} className="bg-blue-500 text-white px-4 py-2 rounded">
-                        Create Game
-                    </button>
-                    <input
-                        type="text"
-                        placeholder="Enter Game ID"
-                        className="border px-4 py-2 rounded w-40"
-                        onChange={(e) => setGameId(e.target.value)}
-                    />
-                    <button onClick={joinGame} className="bg-green-500 text-white px-4 py-2 rounded">
-                        Join Game
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
+      <div className="flex justify-center items-center h-screen bg-gray-100">
+          {/* Main Game Container */}
+          <div className="bg-white shadow-lg rounded-lg p-6 flex flex-col items-center justify-center w-full max-w-[50vw] max-h-[50vh]">
+              <h1 className="text-2xl font-bold mb-4">Chess Game</h1>
+  
+              {/* Display Game Info */}
+              {gameId && (
+                  <div className="mb-4 text-center p-4 bg-gray-200 shadow-md rounded w-full">
+                      <p><strong>Game ID:</strong> {gameId}</p>
+                      <p><strong>Your ID:</strong> {playerId}</p>
+                      <p><strong>Opponent ID:</strong> {opponentId || "Waiting for opponent..."}</p>
+                      <p><strong>Your Color:</strong> {playerColor}</p>
+                      <p><strong>Turn:</strong> {currentTurn}</p>
+                  </div>
+              )}
+  
+              {/* Chessboard - Takes up half screen width & height */}
+              <div className="flex justify-center items-center w-full">
+                  <div className="w-full max-w-[400px]">
+                      <Chessboard
+                          position={game.fen()}
+                          onPieceDrop={onDrop}
+                          arePremovesAllowed={false}
+                          boardOrientation={playerColor} // Fixed board orientation for each player
+                          customBoardStyle={{ width: "100%", height: "auto" }}
+                      />
+                  </div>
+              </div>
+  
+              {/* Game Controls */}
+              <div className="mt-6 flex flex-col items-center w-full">
+                  <div className="flex flex-wrap gap-2 justify-center">
+                      <button onClick={createGame} className="bg-blue-500 text-white px-4 py-2 rounded">
+                          Create Game
+                      </button>
+                      <input
+                          type="text"
+                          placeholder="Enter Game ID"
+                          className="border px-4 py-2 rounded w-40"
+                          onChange={(e) => setGameId(e.target.value)}
+                      />
+                      <button onClick={joinGame} className="bg-green-500 text-white px-4 py-2 rounded">
+                          Join Game
+                      </button>
+                  </div>
+              </div>
+          </div>
+      </div>
+  );  
 };
 
 export default ChessGame;
