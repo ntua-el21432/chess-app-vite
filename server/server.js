@@ -20,7 +20,7 @@ app.use(express.static(clientPath));
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "http://localhost:3000" ,// Allow frontend to connect
+        origin: "https://chess-app-vite-2.onrender.com" ,// Allow frontend to connect
         methods: ["GET", "POST"]
     }
 });

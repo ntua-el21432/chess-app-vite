@@ -4,7 +4,7 @@ import { Chessboard } from "react-chessboard";
 import  io  from "socket.io-client";
 
 // Connect to server 
-const socket = io("http://localhost:5000");
+const socket = io("https://chess-app-vite-2.onrender.com");
 
 const ChessGame = () => {
     const [game, setGame] = useState(new Chess());
