@@ -110,12 +110,27 @@ io.on("connection", (socket) => {
     
             console.log(`Move made in game ${gameId}: ${move.from} to ${move.to}`);
             console.log(`Sending board state: ${game.chess.fen()} to all players in room ${gameId}`);
-    
+            
+            //check for check and checkmate
+            const isCheck = game.chess.inCheck();
+            const isCheckmate = game.chess.isCheckmate();
+
             // Send the updated board to **everyone** in the game room
             io.to(gameId).emit("moveMade", {
                 board: game.chess.fen(),
-                currentTurn: game.chess.turn() === "w" ? "white" : "black"
+                currentTurn: game.chess.turn() === "w" ? "white" : "black",
+                isCheck,
+                isCheckmate
             });
+
+            if (isCheckmate) {
+                setTimeout(() => {
+                    io.to(gameId).emit("gameOver", {
+                        winner: playerColor === "w" ? "white" : "black",
+                        reason: "Checkmate"
+                    });
+                }, 1000);
+            }
     
         } catch (error) {
             console.error("Invalid move attempted:", error.message);

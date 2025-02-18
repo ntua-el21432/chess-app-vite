@@ -3,6 +3,7 @@
   "dependencies": {
     "build": "^0.1.4",
     "chess.js": "^1.0.0",
+    "chessjs": "^0.0.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "nodemon": "^3.1.9",

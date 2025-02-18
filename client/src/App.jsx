@@ -4,7 +4,7 @@ import { Chessboard } from "react-chessboard";
 import  io  from "socket.io-client";
 
 // Connect to server 
-const socket = io("https://chess-app-vite-2.onrender.com");
+const socket = io("http://localhost:5000");
 
 const ChessGame = () => {
     const [game, setGame] = useState(new Chess());
@@ -12,6 +12,8 @@ const ChessGame = () => {
     const [currentTurn, setCurrentTurn] = useState("white");
     const [playerId, setPlayerId] = useState("");
     const [assignedColor, setAssignedColor] = useState("");
+    const [isCheck, setIsCheck] = useState(false);
+    const [isCheckmate, setIsCheckmate] = useState(false);  
     const [opponentId, setOpponentId] = useState("");
     const [boardOrientation, setBoardOrientation] = useState("white");
     const [statusMessage, setStatusMessage] = useState(""); // For connection status message
@@ -31,6 +33,13 @@ const ChessGame = () => {
     };
 
     const onDrop = (sourceSquare, targetSquare) => {
+        const piece = game.get(sourceSquare);
+        // Ensure the selected piece belongs to the player
+        if (!piece || (assignedColor === "white" && piece.color !== "w") || (assignedColor === "black" && piece.color !== "b")) {
+            setStatusMessage("You cannot move your opponent's pieces!");
+            return false;
+        }
+
         if ((assignedColor === "white" && game.turn() !== "w") || 
             (assignedColor === "black" && game.turn() !== "b")) {
             setStatusMessage("It's not your turn!");
@@ -76,10 +85,17 @@ const ChessGame = () => {
             console.log("Move received from server:", data); // <-- Debugging
             setGame(new Chess(data.board));
             setCurrentTurn(data.currentTurn);
+            setIsCheck(data.isCheck);
+            setIsCheckmate(data.isCheckmate);
             setStatusMessage(`Move made. It's now ${data.currentTurn}'s turn.`);
         });
         socket.on("updatePlayers", (players) => {
             setOpponentId(players.white === socket.id ? players.black : players.white);
+        });
+
+        socket.on("GameOver", (data) => {
+            setIsCheckmate(true);
+            setStatusMessage(`Game Over! ${data.winner} wins by checkmate.`);
         });
 
         socket.on("error", (message) => {
@@ -97,6 +113,7 @@ const ChessGame = () => {
             socket.off("gameStarted");
             socket.off("moveMade");
             socket.off("updatePlayers");
+            socket.off("GameOver");
             socket.off("error");
             socket.off("disconnect");
         };
@@ -105,6 +122,20 @@ const ChessGame = () => {
     const flipBoard= () => {
         setBoardOrientation(prev=> (prev === "white" ? "black" : "white"));
     };
+
+     // Highlight king when in check
+     const getSquareStyles = () => {
+        const styles = {};
+        if (isCheck) {
+            const kingPos = game.turn() === "w" ? game.board().flat().find(piece => piece?.type === "k" && piece.color === "w")?.square :
+                game.board().flat().find(piece => piece?.type === "k" && piece.color === "b")?.square;
+            if (kingPos) {
+                styles[kingPos] = { backgroundColor: "red" };
+            }
+        }
+        return styles;
+    };
+
 
     return (
         <div className="flex justify-center items-center h-screen w-screen bg-gray-100">
@@ -130,11 +161,13 @@ const ChessGame = () => {
 
                 {/* Chessboard */}
                 <div style={{ width: "80%", height: "60%" }}>
+                    {isCheckmate && <h2 className="text-red-500">Game Over! {winner} wins by checkmate</h2>}
                     <Chessboard
                         position={game.fen()}
                         onPieceDrop={onDrop}
                         arePremovesAllowed={false}
                         boardOrientation={boardOrientation} // Fixed orientation based on turn
+                        customSquareStyles={getSquareStyles()} // highlight king when in check
                         customBoardStyle={{ width: "100%", height: "100%" }}
                     />
                 </div>
