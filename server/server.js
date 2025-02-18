@@ -4,12 +4,13 @@ import { Server } from "socket.io";
 import { Chess } from "chess.js";
 import path from "path";
 import {fileURLToPath} from "url";
-const app = express();
 
 const port=process.env.PORT || 5000;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const app=express();
 
 const clientPath=path.join(__dirname,"../client","dist");
 
@@ -19,7 +20,7 @@ app.use(express.static(clientPath));
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://chess-app-vite-2.onrender.com" ,// Allow frontend to connect
+        origin: "http://localhost:3000" ,// Allow frontend to connect
         methods: ["GET", "POST"]
     }
 });
@@ -33,14 +34,7 @@ io.on("connection", (socket) => {
     // Handle game creation
     socket.on("createGame", () => {
         const gameId = Math.random().toString(36).slice(2, 11); // Generate a random game ID using slice() instead of substr()
-        games[gameId] = {
-            chess:new Chess(),
-            players: {
-                white: socket.id,
-                black: null,
-            },
-            currentTurn: "white"
-        };
+        games[gameId] = new Chess();
         socket.join(gameId); // Add socket to a room (gameId)
         console.log(`Game created with ID: ${gameId}`);
         socket.emit("gameCreated", gameId); // Emit the game ID back to the client
@@ -49,12 +43,10 @@ io.on("connection", (socket) => {
     // Handle joining a game
     socket.on("joinGame", (gameId) => {
         const game=games[gameId];
-        if (game && !game.players.black) {
-            game.players.black = socket.id;
+        if (game) {
             socket.join(gameId);
             socket.emit("gameStarted", {
-                board: game.chess.fen,
-                playerColor: "black",
+                board: game.fen(),
                 currentTurn: game.currentTurn
             });
         } else if(!game){
@@ -68,11 +60,10 @@ io.on("connection", (socket) => {
     // Handle moves
     socket.on("makeMove", (gameId, move) => {
         const game = games[gameId];
-        if (game && game.players[game.currentTurn] === socket.id) {
-            const moveResult = game.chess.move(move);
+        if (game) {
+            const moveResult = game.move(move);
             if (moveResult) {
-                game.currentTurn = game.currentTurn === "white" ? "black" : "white";
-                io.to(gameId).emit("moveMade", game.fen, game.currentTurn);
+                io.to(gameId).emit("moveMade", game.fen(), game.turn()==="w"?"white":"black");
             } else {
                 socket.emit("error", "Invalid move.");
             }
