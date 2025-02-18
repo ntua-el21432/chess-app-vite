@@ -72,7 +72,7 @@ io.on("connection", (socket) => {
             const moveResult = game.chess.move(move);
             if (moveResult) {
                 game.currentTurn = game.currentTurn === "white" ? "black" : "white";
-                io.to(gameId).emit("moveMade", game.fen, game.currentTurn());
+                io.to(gameId).emit("moveMade", game.fen, game.currentTurn);
             } else {
                 socket.emit("error", "Invalid move.");
             }
