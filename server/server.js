@@ -20,7 +20,7 @@ app.use(express.static(clientPath));
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://chess-app-vite-2.onrender.com" ,// Allow frontend to connect
+        origin: "http://localhost:3000" ,// Allow frontend to connect
         methods: ["GET", "POST"]
     }
 });
@@ -33,15 +33,15 @@ io.on("connection", (socket) => {
 
     // Handle game creation
     socket.on("createGame", () => {
-        const gameId = Math.random().toString(36).slice(2, 11); // Generate a random game ID using slice() instead of substr()
+        const gameId = Math.random().toString(36).slice(2, 11); // Generate a random game ID
         games[gameId] = {
             chess: new Chess(),
             white: socket.id,
             black:null
         };
-        socket.join(gameId); // Add socket to a room (gameId)
+        socket.join(gameId); // Add socket to a room 
         console.log(`Game created with ID: ${gameId}`);
-        socket.emit("gameCreated", gameId); // Emit the game ID back to the client
+        socket.emit("gameCreated", gameId); // Emit the game ID back to client
     });
 
     // Handle joining a game
@@ -61,7 +61,7 @@ io.on("connection", (socket) => {
         }
     
         socket.join(gameId);
-    
+        const boardOrientation = game.white === socket.id ? "white" : "black";
         const assignedColor = game.white === socket.id ? "white" : "black";
     
         console.log(`Player ${socket.id} joined game ${gameId} as ${assignedColor}`);
@@ -69,6 +69,7 @@ io.on("connection", (socket) => {
         socket.emit("gameStarted", {
             board: game.chess.fen(),
             currentTurn: game.chess.turn() === "w" ? "white" : "black",
+            boardOrientation,
             assignedColor
         });
     

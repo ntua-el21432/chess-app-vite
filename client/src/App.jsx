@@ -4,7 +4,7 @@ import { Chessboard } from "react-chessboard";
 import  io  from "socket.io-client";
 
 // Connect to server 
-const socket = io("https://chess-app-vite-2.onrender.com");
+const socket = io("http://localhost:5000");
 
 const ChessGame = () => {
     const [game, setGame] = useState(new Chess());
@@ -67,6 +67,7 @@ const ChessGame = () => {
             setGame(new Chess(gameState.board));
             setCurrentTurn(gameState.currentTurn);
             setAssignedColor(gameState.assignedColor);
+            setBoardOrientation(gameState.boardOrientation);
             setOpponentId(gameState.opponentId || "Waiting for opponent...");
             setStatusMessage("Game started!");
         });
