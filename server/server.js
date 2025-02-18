@@ -34,7 +34,11 @@ io.on("connection", (socket) => {
     // Handle game creation
     socket.on("createGame", () => {
         const gameId = Math.random().toString(36).slice(2, 11); // Generate a random game ID using slice() instead of substr()
-        games[gameId] = new Chess();
+        games[gameId] = {
+            chess: new Chess(),
+            white: socket.id,
+            black:null
+        };
         socket.join(gameId); // Add socket to a room (gameId)
         console.log(`Game created with ID: ${gameId}`);
         socket.emit("gameCreated", gameId); // Emit the game ID back to the client
@@ -42,33 +46,83 @@ io.on("connection", (socket) => {
 
     // Handle joining a game
     socket.on("joinGame", (gameId) => {
-        const game=games[gameId];
-        if (game) {
-            socket.join(gameId);
-            socket.emit("gameStarted", {
-                board: game.fen(),
-                currentTurn: game.currentTurn
-            });
-        } else if(!game){
+        const game = games[gameId];
+    
+        if (!game) {
             socket.emit("error", "Invalid game ID.");
+            return;
         }
-        else{
-            socket.emit("error", "Game already has two players.");
+    
+        if (!game.black && game.white !== socket.id) {
+            game.black = socket.id; // Assign second player as black
+        } else if (game.white !== socket.id && game.black !== socket.id) {
+            socket.emit("error", "Game is already full.");
+            return;
         }
+    
+        socket.join(gameId);
+    
+        const assignedColor = game.white === socket.id ? "white" : "black";
+    
+        console.log(`Player ${socket.id} joined game ${gameId} as ${assignedColor}`);
+    
+        socket.emit("gameStarted", {
+            board: game.chess.fen(),
+            currentTurn: game.chess.turn() === "w" ? "white" : "black",
+            assignedColor
+        });
+    
+        io.to(gameId).emit("updatePlayers", {
+            white: game.white,
+            black: game.black
+        });
     });
-
+    
     // Handle moves
     socket.on("makeMove", (gameId, move) => {
         const game = games[gameId];
-        if (game) {
-            const moveResult = game.move(move);
-            if (moveResult) {
-                io.to(gameId).emit("moveMade", game.fen(), game.turn()==="w"?"white":"black");
-            } else {
+    
+        if (!game) {
+            socket.emit("error", "Invalid game ID.");
+            return;
+        }
+    
+        const playerColor = game.white === socket.id ? "w" : game.black === socket.id ? "b" : null;
+    
+        if (!playerColor) {
+            socket.emit("error", "You are not a player in this game.");
+            return;
+        }
+    
+        if (game.chess.turn() !== playerColor) {
+            socket.emit("error", "It's not your turn.");
+            return;
+        }
+    
+        try {
+            const moveResult = game.chess.move(move);
+    
+            if (!moveResult) {
                 socket.emit("error", "Invalid move.");
+                return;
             }
+    
+            console.log(`Move made in game ${gameId}: ${move.from} to ${move.to}`);
+            console.log(`Sending board state: ${game.chess.fen()} to all players in room ${gameId}`);
+    
+            // Send the updated board to **everyone** in the game room
+            io.to(gameId).emit("moveMade", {
+                board: game.chess.fen(),
+                currentTurn: game.chess.turn() === "w" ? "white" : "black"
+            });
+    
+        } catch (error) {
+            console.error("Invalid move attempted:", error.message);
+            socket.emit("error", "Invalid move. Please try again.");
         }
     });
+    
+    
 
     // Handle disconnection
     socket.on("disconnect", () => {

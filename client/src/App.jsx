@@ -11,7 +11,9 @@ const ChessGame = () => {
     const [gameId, setGameId] = useState(""); 
     const [currentTurn, setCurrentTurn] = useState("white");
     const [playerId, setPlayerId] = useState("");
+    const [assignedColor, setAssignedColor] = useState("");
     const [opponentId, setOpponentId] = useState("");
+    const [boardOrientation, setBoardOrientation] = useState("white");
     const [statusMessage, setStatusMessage] = useState(""); // For connection status message
 
     const createGame = () => {
@@ -29,17 +31,24 @@ const ChessGame = () => {
     };
 
     const onDrop = (sourceSquare, targetSquare) => {
+        if ((assignedColor === "white" && game.turn() !== "w") || 
+            (assignedColor === "black" && game.turn() !== "b")) {
+            setStatusMessage("It's not your turn!");
+            return false;
+        }
+    
         const newGame = new Chess(game.fen());
         const move = newGame.move({ from: sourceSquare, to: targetSquare, promotion: "q" });
-
+    
         if (move) {
             setGame(newGame);
-            setCurrentTurn(newGame.turn() === "w" ? "white" : "black"); // Update turn
+            setCurrentTurn(newGame.turn() === "w" ? "white" : "black");
             socket.emit("makeMove", gameId, { from: sourceSquare, to: targetSquare });
             return true;
         }
         return false;
     };
+    
 
     // Handle socket events
     useEffect(() => {
@@ -57,14 +66,19 @@ const ChessGame = () => {
         socket.on("gameStarted", (gameState) => {
             setGame(new Chess(gameState.board));
             setCurrentTurn(gameState.currentTurn);
+            setAssignedColor(gameState.assignedColor);
             setOpponentId(gameState.opponentId || "Waiting for opponent...");
             setStatusMessage("Game started!");
         });
 
-        socket.on("moveMade", (board, turn) => {
-            setGame(new Chess(board));
-            setCurrentTurn(turn);
-            setStatusMessage(`Move made. It's now ${turn}'s turn.`);
+        socket.on("moveMade", (data) => {
+            console.log("Move received from server:", data); // <-- Debugging
+            setGame(new Chess(data.board));
+            setCurrentTurn(data.currentTurn);
+            setStatusMessage(`Move made. It's now ${data.currentTurn}'s turn.`);
+        });
+        socket.on("updatePlayers", (players) => {
+            setOpponentId(players.white === socket.id ? players.black : players.white);
         });
 
         socket.on("error", (message) => {
@@ -81,10 +95,15 @@ const ChessGame = () => {
             socket.off("gameCreated");
             socket.off("gameStarted");
             socket.off("moveMade");
+            socket.off("updatePlayers");
             socket.off("error");
             socket.off("disconnect");
         };
     }, [gameId]);
+
+    const flipBoard= () => {
+        setBoardOrientation(prev=> (prev === "white" ? "black" : "white"));
+    };
 
     return (
         <div className="flex justify-center items-center h-screen w-screen bg-gray-100">
@@ -114,7 +133,7 @@ const ChessGame = () => {
                         position={game.fen()}
                         onPieceDrop={onDrop}
                         arePremovesAllowed={false}
-                        boardOrientation={currentTurn} // Fixed orientation based on turn
+                        boardOrientation={boardOrientation} // Fixed orientation based on turn
                         customBoardStyle={{ width: "100%", height: "100%" }}
                     />
                 </div>
@@ -132,6 +151,9 @@ const ChessGame = () => {
                     />
                     <button onClick={joinGame} className="bg-green-500 text-white px-3 py-1 rounded">
                         Join Game
+                    </button>
+                    <button onClick={flipBoard} className="mt-3 bg-gray-600 text-white px-4 py-1 rounded">
+                        Flip Board
                     </button>
                 </div>
             </div>
